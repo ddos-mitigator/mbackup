@@ -44,21 +44,22 @@ class MRequest:
     def preconfig(cls, insecure):
         cls.insecure = insecure
 
-        if REQUESTS:
-            cls.S = requests.Session()
-            if insecure:
-                cls.S.verify = False
-                urllib3.disable_warnings()
-
-            cls.proxies = {}
-
-            cls.make_request = MRequest.__requests_make_request
-        else:
+        if not REQUESTS:
             cls.make_request = MRequest.__urllib_make_request
+            return
+
+        cls.S = requests.Session()
+        if insecure:
+            cls.S.verify = False
+            urllib3.disable_warnings()
+
+        cls.proxies = {}
+
+        cls.make_request = MRequest.__requests_make_request
 
     @staticmethod
-    def __requests_make_request(server, uri, token, method=None, policy=None, data=None):
-        url = f'''https://{server}/api/v4/{uri[1:] if uri.startswith('/') else uri}'''
+    def __requests_make_request(server, path, token, method=None, policy=None, data=None):
+        url = f'''https://{server}/api/v4/{path[1:] if path.startswith('/') else path}'''
         url += f'?policy={policy}' if policy else ""
 
         if not (method or data):
@@ -83,21 +84,21 @@ class MRequest:
 
         MRequest.timeout = MRequest.TIMEOUT_DEF
 
-        if not r.ok:
-            if r.status_code == 404:
-                raise M404Exception(f'{url} => 404 {r.reason}')
-            else:
-                raise MOthException(
-                    f'url: {url} => {r.status_code} {r.reason} '
-                    f'[data: {prepped_request.body.decode() if prepped_request.body else "None"}] '
-                    f'[raw: {r.text[:-1]}]'
-                )
-        else:
+        if r.ok:
             return r.json()['data']
 
+        if r.status_code != 404:
+            raise MOthException(
+                f'url: {url} => {r.status_code} {r.reason} '
+                f'[data: {prepped_request.body.decode() if prepped_request.body else "None"}] '
+                f'[raw: {r.text[:-1]}]'
+            )
+
+        raise M404Exception(f'{url} => 404 {r.reason}')
+
     @staticmethod
-    def __urllib_make_request(server, uri, token, method=None, policy=None, data=None):
-        url = f'''https://{server}/api/v4/{uri[1:] if uri.startswith('/') else uri}'''
+    def __urllib_make_request(server, path, token, method=None, policy=None, data=None):
+        url = f'''https://{server}/api/v4/{path[1:] if path.startswith('/') else path}'''
         url += f'?policy={policy}' if policy else ""
 
         request = urllib.request.Request(url, method=method)
@@ -112,14 +113,14 @@ class MRequest:
             )
             MRequest.timeout = MRequest.TIMEOUT_DEF
         except urllib.error.HTTPError as e:
-            if e.code == 404:
-                raise M404Exception(f'{url} => 404 {e.msg}')
-            else:
+            if e.code != 404:
                 raise MOthException(
                     f'url: {url} => {e.code} {e.msg} '
                     f'[data: {request.data.decode() if request.data else "None"}] '
                     f'[raw: {e.fp.read().decode()[:-1]}]'
                 )
+
+            raise M404Exception(f'{url} => 404 {e.msg}')
         except urllib.error.URLError as e:
             MOthException(e)
 

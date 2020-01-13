@@ -7,13 +7,18 @@ import logging
 import mitigator
 
 
-PROG_VERSION = '3.1908.4'
+PROG_VERSION = '3.1912.0'
 
 
 def parse_options(args):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('task', metavar='TASK', choices=['backup', 'restore', 'update-file'])
+    parser.add_argument(
+        'task',
+        metavar='TASK',
+        choices=['backup', 'restore', 'update-file'],
+        help='may be one of following: backup, restore, update-file',
+    )
     parser.add_argument('-v', '--version', action='version', version=PROG_VERSION)
     parser.add_argument('-s', '--server', metavar='URL', help='target server URL')
     parser.add_argument('-u', '--user', metavar='USERNAME', help='system admin username')
@@ -51,27 +56,26 @@ def main(options):
 
         _section = options.task.upper()
 
-        if _section in _config:
-            _section_config = _config[_section]
-
-            _server = _section_config.get('server') or options.server
-            _user = _section_config.get('user') or options.user
-            _passwd = _section_config.get('password') or options.passwd
-            _output = (
-                open(_section_config.get('backup_target'), 'w')
-                if _section_config.get('backup_target')
-                else options.output
-            )
-            _input = (
-                open(_section_config.get('backup_source'), 'r')
-                if _section_config.get('backup_source')
-                else options.input
-            )
-            _insecure = _section_config.getboolean('insecure') or options.insecure
-            _pretty = _section_config.getboolean('pretty') or options.pretty_json
-
-        else:
+        if _section not in _config:
             sys.exit(f'section {_section} not in config file')
+
+        _section_config = _config[_section]
+
+        _server = _section_config.get('server') or options.server
+        _user = _section_config.get('user') or options.user
+        _passwd = _section_config.get('password') or options.passwd
+        _output = (
+            open(_section_config.get('backup_target'), 'w')
+            if _section_config.get('backup_target')
+            else options.output
+        )
+        _input = (
+            open(_section_config.get('backup_source'), 'r')
+            if _section_config.get('backup_source')
+            else options.input
+        )
+        _insecure = _section_config.getboolean('insecure') or options.insecure
+        _pretty = _section_config.getboolean('pretty') or options.pretty_json
 
     else:
         _server = options.server
@@ -108,10 +112,11 @@ def main(options):
         _mitigator = mitigator.Mitigator(_server, _user, _passwd, _insecure)
 
         _file_data = _input.read()
-        if _file_data:
-            _mitigator.load_params_from_json(_file_data)
-        else:
+
+        if not _file_data:
             sys.exit('source file is empty')
+
+        _mitigator.load_params_from_json(_file_data)
 
         try:
             _mitigator.restore()
@@ -128,10 +133,10 @@ def main(options):
         _upd = __update.Update()
 
         _file_data = _input.read()
-        if _file_data:
-            _upd.load_params_from_json(_file_data)
-        else:
+        if not _file_data:
             sys.exit('source file is empty')
+
+        _upd.load_params_from_json(_file_data)
 
         _upd.update_params()
 
