@@ -13,6 +13,15 @@ _get_countermeasure_setting = _get_simple
 _get_countermeasure_switch = _get_simple
 
 
+def _get_dlim6_items(req_func, settings, policy):
+    _data = req_func(uri=settings['path'], policy=policy)
+    if _data:
+        for index, _ in enumerate(_data.get('items', list())):
+            _data['items'][index]['op'] = 'add'
+
+        settings['data'] = copy.deepcopy(_data)
+
+
 def _get_game_setting(req_func, settings, policy):
     _data = req_func(uri=settings['path'], policy=policy)
     if _data['mode'] != 0:
@@ -65,7 +74,7 @@ def _get_autodetect_setting(req_func, settings, policy):
 
 
 def _set_simple(req_func, settings, method=None, policy=None):
-    req_func(settings['path'], policy=policy, method=method if method else 'PUT', data=settings['data'])
+    req_func(settings['path'], policy=policy, method=method or 'PUT', data=settings['data'])
 
 
 countermeasures = {
@@ -80,6 +89,12 @@ countermeasures = {
         'settings': {'acl6_entries': {'path': '/acl6/entries'}},
         'general': True,
         'inpolicy': False,
+    },
+    'atls': {
+        'switch': {'path': '/atls/switch'},
+        'settings': {'atls_settings': {'path': '/atls/settings'}},
+        'general': False,
+        'inpolicy': True,
     },
     'bgpAcl': {'switch': {'path': '/bgpAcl/switch'}, 'settings': dict(), 'general': True, 'inpolicy': False},
     'blacklist': {
@@ -112,8 +127,8 @@ countermeasures = {
     'dlim6': {
         'switch': {'path': '/dlim6/switch'},
         'settings': {
-            'dlim_items': {'path': '/dlim6/items', 'add_method': 'POST'},
-            'dlim_settings': {'path': '/dlim6/settings'},
+            'dlim6_items': {'path': '/dlim6/items', 'add_method': 'PATCH', 'backup_func': _get_dlim6_items},
+            'dlim6_settings': {'path': '/dlim6/settings'},
         },
         'general': True,
         'inpolicy': False,
@@ -153,10 +168,12 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'frag': {
-        'settings': {'ipfrag_settings': {'path': '/frag/settings'}},
-        'general': True,
-        'inpolicy': False,
+    'frag': {'settings': {'ipfrag_settings': {'path': '/frag/settings'}}, 'general': True, 'inpolicy': False},
+    'lcon': {
+        'switch': {'path': '/lcon/switch'},
+        'settings': {'lcon_advanced': {'path': '/lcon/advanced'}, 'lcon_config': {'path': '/lcon/config'}},
+        'general': False,
+        'inpolicy': True,
     },
     'mcr': {
         'switch': {'path': '/mcr/switch'},
@@ -204,6 +221,12 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
+    'sour': {
+        'switch': {'path': '/sour/switch'},
+        'settings': {'sour_settings': {'path': '/sour/settings'}, 'sour_servers': {'path': '/sour/servers'}},
+        'general': False,
+        'inpolicy': True,
+    },
     'sourceLimiter': {
         'switch': {'path': '/sourceLimiter/switch'},
         'settings': {
@@ -212,12 +235,9 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'tcpConnLimiter': {
-        'switch': {'path': '/tcpConnLimiter/switch'},
-        'settings': {
-            'tcpConnLimiter_advanced': {'path': '/tcpConnLimiter/advanced'},
-            'tcpConnLimiter_config': {'path': '/tcpConnLimiter/config'},
-        },
+    'spli': {
+        'switch': {'path': '/spli/switch'},
+        'settings': {'spli_settings': {'path': '/spli/settings'}},
         'general': False,
         'inpolicy': True,
     },
@@ -227,10 +247,9 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'tcpSplicer': {
-        'switch': {'path': '/tcpSplicer/switch'},
-        'settings': {'tcpSplicer_rtt': {'path': '/tcpSplicer/rtt'}},
-        'general': False,
+    'tempBlacklist': {
+        'settings': {'tempBlacklist_settings': {'path': '/tempBlacklist/settings'}},
+        'general': True,
         'inpolicy': True,
     },
     'tlsFloodProt': {
@@ -239,33 +258,7 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'tlsProt': {
-        'switch': {'path': '/tlsProt/switch'},
-        'settings': {
-            'tlsProt_filter_checks': {'path': '/tlsProt/filter/checks'},
-            'tlsProt_filter_mode': {'path': '/tlsProt/filter/mode'},
-            'tlsProt_filter_settings': {'path': '/tlsProt/filter/settings'},
-            'tlsProt_fingerprint_switch': {'path': '/tlsProt/fingerprint/switch'},
-        },
-        'general': False,
-        'inpolicy': True,
-    },
-    'val': {
-        'settings': {
-            'val_settings': {'path': '/val/settings'},
-        },
-        'general': False,
-        'inpolicy': True,
-    },
-    'valveQueryCacher': {
-        'switch': {'path': '/valveQueryCacher/switch'},
-        'settings': {
-            'valveQueryCacher_settings': {'path': '/valveQueryCacher/settings'},
-            'valveQueryCacher_servers': {'path': '/valveQueryCacher/servers'},
-        },
-        'general': False,
-        'inpolicy': True,
-    },
+    'val': {'settings': {'val_settings': {'path': '/val/settings'}}, 'general': False, 'inpolicy': True},
     'whitelist': {
         'switch': {'path': '/whitelist/switch'},
         'settings': {'whitelist_prefixes': {'path': '/whitelist/prefixes'}},

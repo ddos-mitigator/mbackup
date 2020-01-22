@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=E1101
 
 import copy
 import json
@@ -146,7 +147,7 @@ class Restore:
             _mbase._set_simple(
                 req_func=self.req,
                 settings=self.autodetect_params[_old_policy_id],
-                policy=self._old_new_policies_map[_old_policy_id]
+                policy=self._old_new_policies_map[_old_policy_id],
             )
 
     def _resetup_bgp(self):

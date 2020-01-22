@@ -11,7 +11,7 @@ from __restore import Restore
 
 
 class Mitigator(Backup, Restore):
-    _supported_version = 'v19.08'
+    _supported_version = 'v19.12'
 
     def __init__(self, server, username, password, insecure=False):
         self.server = server
@@ -26,7 +26,9 @@ class Mitigator(Backup, Restore):
         self.version = self.req(uri='/backend/version')['version']
 
         if self._supported_version not in self.version:
-            sys.exit(f'FATAL ERROR: version {self.version} unsupport (supported version is {self._supported_version})')
+            sys.exit(
+                f'FATAL ERROR: version {self.version} unsupport (supported version is {self._supported_version})'
+            )
 
         self.policies = dict()
         self.protection_params = dict()

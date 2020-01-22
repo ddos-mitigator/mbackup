@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=E1101
 
 import copy
 import json
@@ -44,6 +45,7 @@ class Backup:
         )
 
     # TODO: policies switches
+    # TODO: /policies/settings/ ??
     def _get_policies(self):
         _policies = self.req(uri='/policies/policies')['policies']
         _policies.sort(key=lambda x: x['id'])
@@ -178,7 +180,6 @@ class Backup:
         _mbase._recursive_cleanup(self.autodetect_params)
 
     def _get_bgp_params(self):
-        self.bgp['path'] = '/bgp'
         self.bgp = self.req(uri='/bgp')
 
         self.bgp['neighbors_policies'] = dict()
