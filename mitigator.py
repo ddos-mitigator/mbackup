@@ -11,7 +11,7 @@ from __restore import Restore
 
 
 class Mitigator(Backup, Restore):
-    _supported_version = 'v19.12'
+    _supported_version = 'v20.02'
 
     def __init__(self, server, username, password, insecure=False):
         self.server = server
@@ -20,7 +20,10 @@ class Mitigator(Backup, Restore):
         MReq.preconfig(insecure)
 
         self.token = MReq.make_request(
-            server=server, path='/users/session', token=None, data={'username': username, 'password': password}
+            server=server,
+            path='/users/session',
+            token=None,
+            data={'username': username, 'password': password},
         )['token']
 
         self.version = self.req(path='/backend/version')['version']

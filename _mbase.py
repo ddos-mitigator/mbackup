@@ -171,7 +171,7 @@ countermeasures = {
     'frag': {'settings': {'ipfrag_settings': {'path': '/frag/settings'}}, 'general': True, 'inpolicy': False},
     'lcon': {
         'switch': {'path': '/lcon/switch'},
-        'settings': {'lcon_advanced': {'path': '/lcon/advanced'}, 'lcon_config': {'path': '/lcon/config'}},
+        'settings': {'lcon_settings': {'path': '/lcon/settings'}},
         'general': False,
         'inpolicy': True,
     },
@@ -259,6 +259,12 @@ countermeasures = {
         'inpolicy': True,
     },
     'val': {'settings': {'val_settings': {'path': '/val/settings'}}, 'general': False, 'inpolicy': True},
+    'wg': {
+        'switch': {'path': '/wg/switch'},
+        'settings': {'wg_settings': {'path': '/wg/settings'}},
+        'general': False,
+        'inpolicy': True,
+    },
     'whitelist': {
         'switch': {'path': '/whitelist/switch'},
         'settings': {'whitelist_prefixes': {'path': '/whitelist/prefixes'}},

@@ -151,12 +151,13 @@ class Restore:
             )
 
     def _resetup_bgp(self):
+        _bgp_announce = self.bgp.get('announce', dict())
         _bgp_community_lists = self.bgp.get('community_lists', list())
         _bgp_flowspec_lists = self.bgp.get('flowspec_lists', list())
         _bgp_global = self.bgp.get('global')
         _bgp_neighbors = self.bgp.get('neighbors', list())
-        _bgp_prefix_lists = self.bgp.get('prefix_lists', list())
         _bgp_neighbors_policies = self.bgp.get('neighbors_policies', dict())
+        _bgp_prefix_lists = self.bgp.get('prefix_lists', list())
 
         __community_lists_map = dict()
         __flowspec_lists_map = dict()
@@ -229,3 +230,6 @@ class Restore:
 
         if _bgp_global:
             self.req(path='/bgp/global', method='PUT', data=_bgp_global)
+
+        if _bgp_announce and _bgp_announce.get('switch'):
+            self.req(path='/bgp/announce', method='PUT', data=_bgp_announce)
