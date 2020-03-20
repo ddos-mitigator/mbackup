@@ -47,7 +47,7 @@ class Backup:
     # TODO: policies switches
     # TODO: /policies/settings/ ??
     def _get_policies(self):
-        _policies = self.req(uri='/policies/policies')['policies']
+        _policies = self.req(path='/policies/policies')['policies']
         _policies.sort(key=lambda x: x['id'])
 
         for policy in _policies:
@@ -59,7 +59,7 @@ class Backup:
             self.policies[policy_id] = policy
 
             # policy switch
-            self.policies[policy_id].update(self.req(uri='/toggle/switch', policy=policy_id))
+            self.policies[policy_id].update(self.req(path='/toggle/switch', policy=policy_id))
 
     def _get_protection_params(self):
         for _target in ['general', *self.policies]:
@@ -102,7 +102,7 @@ class Backup:
         _mbase._recursive_cleanup(self.protection_params)
 
     def _get_groups(self):
-        _groups = self.req(uri='/groups/groups')['groups']
+        _groups = self.req(path='/groups/groups')['groups']
 
         for _group in _groups:
             _policies_list = list()
@@ -119,7 +119,7 @@ class Backup:
         _mbase._recursive_cleanup(self.groups)
 
     def _get_rules(self):
-        _rules = self.req(uri='/policySwitch/rules')['rules']
+        _rules = self.req(path='/policySwitch/rules')['rules']
         for rule in _rules:
             if 'is_default' in rule:
                 continue
@@ -170,7 +170,7 @@ class Backup:
                 self.rules['patches'].append(obj)
 
     def _get_autodetect_params(self):
-        self.autodetect_params['switch'] = self.req(uri='/autodetect/switch')
+        self.autodetect_params['switch'] = self.req(path='/autodetect/switch')
         for policy in self.policies:
             self.autodetect_params[policy] = {'path': '/autodetect'}
             _mbase._get_autodetect_setting(
@@ -180,12 +180,12 @@ class Backup:
         _mbase._recursive_cleanup(self.autodetect_params)
 
     def _get_bgp_params(self):
-        self.bgp = self.req(uri='/bgp')
+        self.bgp = self.req(path='/bgp')
 
         self.bgp['neighbors_policies'] = dict()
         for neighbor in self.bgp.get('neighbors', list()):
             neighbor_id = neighbor['id']
-            self.bgp['neighbors_policies'][neighbor_id] = self.req(uri=f'/bgp/neighbors/{neighbor_id}/policy')
+            self.bgp['neighbors_policies'][neighbor_id] = self.req(path=f'/bgp/neighbors/{neighbor_id}/policy')
 
         for index, prefix in enumerate(self.bgp.get('prefix_lists', list())):
             if prefix.get('name') == 'system.flow.detect':

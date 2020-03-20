@@ -5,7 +5,7 @@ import sys
 
 
 def _get_simple(req_func, settings, policy=None):
-    settings['data'] = req_func(uri=settings['path'], policy=policy)
+    settings['data'] = req_func(path=settings['path'], policy=policy)
 
 
 _get_countermeasure_setting = _get_simple
@@ -14,7 +14,7 @@ _get_countermeasure_switch = _get_simple
 
 
 def _get_dlim6_items(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if _data:
         for index, _ in enumerate(_data.get('items', list())):
             _data['items'][index]['op'] = 'add'
@@ -23,20 +23,20 @@ def _get_dlim6_items(req_func, settings, policy):
 
 
 def _get_game_setting(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if _data['mode'] != 0:
         settings['data'] = copy.deepcopy(_data)
 
 
 def _get_gre_setting(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if 'switch' in _data:
         del _data['switch']
     settings['data'] = copy.deepcopy(_data)
 
 
 def _get_httpfloodprot_setting(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if _data['type'] == 'custom':
         _data['templates'] = {
             'get_response': _data['available']['templates']['custom_get_response'],
@@ -49,19 +49,19 @@ def _get_httpfloodprot_setting(req_func, settings, policy):
 
 
 def _get_mcr_setting(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if _data['key']:
         settings['data'] = copy.deepcopy(_data)
 
 
 def _get_limiter_setting(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if _data['pps'] or _data['bps']:
         settings['data'] = copy.deepcopy(_data)
 
 
 def _get_autodetect_setting(req_func, settings, policy):
-    _data = req_func(uri=settings['path'], policy=policy)
+    _data = req_func(path=settings['path'], policy=policy)
     if 'custom_metrics' in _data:
         # remap (bug in backend v19.05)
         _data['custom_metrics'] = {'custom_metrics': _data['custom_metrics']}
@@ -171,7 +171,7 @@ countermeasures = {
     'frag': {'settings': {'ipfrag_settings': {'path': '/frag/settings'}}, 'general': True, 'inpolicy': False},
     'lcon': {
         'switch': {'path': '/lcon/switch'},
-        'settings': {'lcon_advanced': {'path': '/lcon/advanced'}, 'lcon_config': {'path': '/lcon/config'}},
+        'settings': {'lcon_settings': {'path': '/lcon/settings'}},
         'general': False,
         'inpolicy': True,
     },
@@ -259,6 +259,12 @@ countermeasures = {
         'inpolicy': True,
     },
     'val': {'settings': {'val_settings': {'path': '/val/settings'}}, 'general': False, 'inpolicy': True},
+    'wg': {
+        'switch': {'path': '/wg/switch'},
+        'settings': {'wg_settings': {'path': '/wg/settings'}},
+        'general': False,
+        'inpolicy': True,
+    },
     'whitelist': {
         'switch': {'path': '/whitelist/switch'},
         'settings': {'whitelist_prefixes': {'path': '/whitelist/prefixes'}},

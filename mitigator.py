@@ -11,7 +11,7 @@ from __restore import Restore
 
 
 class Mitigator(Backup, Restore):
-    _supported_version = 'v19.12'
+    _supported_version = 'v20.02'
 
     def __init__(self, server, username, password, insecure=False):
         self.server = server
@@ -20,10 +20,13 @@ class Mitigator(Backup, Restore):
         MReq.preconfig(insecure)
 
         self.token = MReq.make_request(
-            server=server, uri='/users/session', token=None, data={'username': username, 'password': password}
+            server=server,
+            path='/users/session',
+            token=None,
+            data={'username': username, 'password': password},
         )['token']
 
-        self.version = self.req(uri='/backend/version')['version']
+        self.version = self.req(path='/backend/version')['version']
 
         if self._supported_version not in self.version:
             sys.exit(
@@ -40,10 +43,10 @@ class Mitigator(Backup, Restore):
         self._old_new_policies_map = dict()
         self._old_new_groups_map = dict()
 
-    def req(self, uri, method=None, policy=None, data=None):
+    def req(self, path, method=None, policy=None, data=None):
         try:
             return MReq.make_request(
-                server=self.server, uri=uri, token=self.token, method=method, policy=policy, data=data
+                server=self.server, path=path, token=self.token, method=method, policy=policy, data=data
             )
         except M404Exception as e:
             logging.error(e)

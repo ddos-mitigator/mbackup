@@ -55,7 +55,7 @@ class Restore:
             if _old_policy_data.get('is_default', False):
                 self._old_new_policies_map['1'] = 1
                 self.req(
-                    uri='/policies/policy/1',
+                    path='/policies/policy/1',
                     method='PUT',
                     data={
                         'name': _old_policy_data.get('name'),
@@ -72,7 +72,7 @@ class Restore:
                 continue
 
             self._old_new_policies_map[_old_policy_id] = self.req(
-                uri='/policies/policy',
+                path='/policies/policy',
                 data={
                     'name': _old_policy_data.get('name'),
                     'auto_mitigation': _old_policy_data.get('auto_mitigation'),
@@ -91,7 +91,7 @@ class Restore:
             for index, policy_id in enumerate(_old_group_data.get('policies', list())):
                 _old_group_data['policies'][index] = self._old_new_policies_map[str(policy_id)]
 
-            self._old_new_groups_map[_old_group_id] = self.req(uri='/groups/groups', data=_old_group_data)[
+            self._old_new_groups_map[_old_group_id] = self.req(path='/groups/groups', data=_old_group_data)[
                 'id'
             ]
 
@@ -151,12 +151,13 @@ class Restore:
             )
 
     def _resetup_bgp(self):
+        _bgp_announce = self.bgp.get('announce', dict())
         _bgp_community_lists = self.bgp.get('community_lists', list())
         _bgp_flowspec_lists = self.bgp.get('flowspec_lists', list())
         _bgp_global = self.bgp.get('global')
         _bgp_neighbors = self.bgp.get('neighbors', list())
-        _bgp_prefix_lists = self.bgp.get('prefix_lists', list())
         _bgp_neighbors_policies = self.bgp.get('neighbors_policies', dict())
+        _bgp_prefix_lists = self.bgp.get('prefix_lists', list())
 
         __community_lists_map = dict()
         __flowspec_lists_map = dict()
@@ -167,7 +168,7 @@ class Restore:
             for _record in _bgp_community_lists:
                 __old_record_id = _record['id']
                 del _record['id']
-                __community_lists_map[__old_record_id] = self.req(uri='/bgp/community_lists', data=_record)[
+                __community_lists_map[__old_record_id] = self.req(path='/bgp/community_lists', data=_record)[
                     'id'
                 ]
 
@@ -175,7 +176,7 @@ class Restore:
             for _record in _bgp_flowspec_lists:
                 __old_record_id = _record['id']
                 del _record['id']
-                __flowspec_lists_map[__old_record_id] = self.req(uri='/bgp/flowspec_lists', data=_record)[
+                __flowspec_lists_map[__old_record_id] = self.req(path='/bgp/flowspec_lists', data=_record)[
                     'id'
                 ]
 
@@ -183,13 +184,13 @@ class Restore:
             for _record in _bgp_neighbors:
                 __old_record_id = _record['id']
                 del _record['id']
-                __neighbors_map[__old_record_id] = self.req(uri='/bgp/neighbors', data=_record)['id']
+                __neighbors_map[__old_record_id] = self.req(path='/bgp/neighbors', data=_record)['id']
 
         if _bgp_prefix_lists:
             for _record in _bgp_prefix_lists:
                 __old_record_id = _record['id']
                 del _record['id']
-                __prefix_lists_map[__old_record_id] = self.req(uri='/bgp/prefix_lists', data=_record)['id']
+                __prefix_lists_map[__old_record_id] = self.req(path='/bgp/prefix_lists', data=_record)['id']
 
         # remap and set neighbors policies
         for __old_neighbor_id, __neighbor_policies in _bgp_neighbors_policies.items():
@@ -222,10 +223,13 @@ class Restore:
                     del __policy['flowspec_lists']
 
             self.req(
-                uri=f'/bgp/neighbors/{__neighbors_map[int(__old_neighbor_id)]}/policy',
+                path=f'/bgp/neighbors/{__neighbors_map[int(__old_neighbor_id)]}/policy',
                 method='PUT',
                 data=__neighbor_policies,
             )
 
         if _bgp_global:
-            self.req(uri='/bgp/global', method='PUT', data=_bgp_global)
+            self.req(path='/bgp/global', method='PUT', data=_bgp_global)
+
+        if _bgp_announce and _bgp_announce.get('switch'):
+            self.req(path='/bgp/announce', method='PUT', data=_bgp_announce)

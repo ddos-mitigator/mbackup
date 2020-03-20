@@ -58,8 +58,8 @@ class MRequest:
         cls.make_request = MRequest.__requests_make_request
 
     @staticmethod
-    def __requests_make_request(server, uri, token, method=None, policy=None, data=None):
-        url = f'''https://{server}/api/v4/{uri[1:] if uri.startswith('/') else uri}'''
+    def __requests_make_request(server, path, token, method=None, policy=None, data=None):
+        url = f'''https://{server}/api/v4/{path[1:] if path.startswith('/') else path}'''
         url += f'?policy={policy}' if policy else ""
 
         if not (method or data):
@@ -97,8 +97,8 @@ class MRequest:
         raise M404Exception(f'{url} => 404 {r.reason}')
 
     @staticmethod
-    def __urllib_make_request(server, uri, token, method=None, policy=None, data=None):
-        url = f'''https://{server}/api/v4/{uri[1:] if uri.startswith('/') else uri}'''
+    def __urllib_make_request(server, path, token, method=None, policy=None, data=None):
+        url = f'''https://{server}/api/v4/{path[1:] if path.startswith('/') else path}'''
         url += f'?policy={policy}' if policy else ""
 
         request = urllib.request.Request(url, method=method)
