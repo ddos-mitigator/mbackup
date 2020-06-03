@@ -50,6 +50,9 @@ def _get_httpfloodprot_setting(req_func, settings, policy):
 
 def _get_mcr_setting(req_func, settings, policy):
     _data = req_func(path=settings['path'], policy=policy)
+    if 'ack_mode_indicator' in _data:
+        del _data['ack_mode_indicator']
+
     if _data['key']:
         settings['data'] = copy.deepcopy(_data)
 
@@ -60,15 +63,45 @@ def _get_limiter_setting(req_func, settings, policy):
         settings['data'] = copy.deepcopy(_data)
 
 
+# TODO: rewrite w\o bulk request
 def _get_autodetect_setting(req_func, settings, policy):
-    _data = req_func(path=settings['path'], policy=policy)
-    if 'custom_metrics' in _data:
-        # remap (bug in backend v19.05)
-        _data['custom_metrics'] = {'custom_metrics': _data['custom_metrics']}
-    if 'thresholds' in _data:
-        del _data['thresholds']
-    settings['data'] = _data
+    _data = req_func(path='/autodetect', policy=policy)
 
+    if 'custom_metrics' in _data:
+        settings['custom_metrics'] = {'custom_metrics': _data['custom_metrics']}
+
+    settings['timings'] = _data.pop('timings', dict())
+
+    keys = _data.keys()
+
+    for key in keys:
+        if key.startswith('timings_'):
+            settings['cm_timings'].append({key[len('timings_') :]: _data[key]})
+
+        if key.startswith('switch_'):
+            settings['cm_switchs'].append({key[len('switch_') :]: _data[key]})
+
+
+def _get_tcpfloodprot_setting(req_func, settings, policy):
+    _data = req_func(path=settings['path'], policy=policy)
+    if 'ack_mode_indicator' in _data:
+        del _data['ack_mode_indicator']
+
+    settings['data'] = copy.deepcopy(_data)
+
+
+def _get_crb_setting(req_func, settings, policy):
+    _data = req_func(path=settings['path'], policy=policy)
+    if 'limit' in _data:
+        settings['data'] = copy.deepcopy(_data)
+
+
+def _get_autocapture_setting(req_func, settings, policy):
+    is_autocapture_enabled = req_func(path='autodetect/switch/packetCapture', policy=policy).get('switch')
+    autocapture_settings = req_func(path=settings['path'], policy=policy)
+
+    if is_autocapture_enabled and autocapture_settings.get('address'):
+        settings['data'] = copy.deepcopy(autocapture_settings)
 
 ###
 
@@ -111,7 +144,7 @@ countermeasures = {
     },
     'crb': {
         'switch': {'path': '/crb/switch'},
-        'settings': {'crb_settings': {'path': '/crb/settings'}},
+        'settings': {'crb_settings': {'path': '/crb/settings', 'backup_func': _get_crb_setting}},
         'general': False,
         'inpolicy': True,
     },
@@ -139,6 +172,12 @@ countermeasures = {
             'dns_settings': {'path': '/dns/settings'},
             'dns_validator_switch': {'path': '/dns/validator_switch'},
         },
+        'general': False,
+        'inpolicy': True,
+    },
+    'frb': {
+        'switch': {'path': '/frb/switch'},
+        'settings': {'frb_settings': {'path': '/frb/settings'},},
         'general': False,
         'inpolicy': True,
     },
@@ -243,7 +282,12 @@ countermeasures = {
     },
     'tcpFloodProt': {
         'switch': {'path': '/tcpFloodProt/switch'},
-        'settings': {'tcpFloodProt_settings': {'path': '/tcpFloodProt/settings'}},
+        'settings': {
+            'tcpFloodProt_settings': {
+                'path': '/tcpFloodProt/settings',
+                'backup_func': _get_tcpfloodprot_setting,
+            }
+        },
         'general': False,
         'inpolicy': True,
     },
@@ -261,7 +305,7 @@ countermeasures = {
     'val': {'settings': {'val_settings': {'path': '/val/settings'}}, 'general': False, 'inpolicy': True},
     'wg': {
         'switch': {'path': '/wg/switch'},
-        'settings': {'wg_settings': {'path': '/wg/settings'}},
+        'settings': {'wg_settings': {'path': '/wg/settings', 'backup_func': _get_mcr_setting}},
         'general': False,
         'inpolicy': True,
     },
@@ -276,6 +320,30 @@ countermeasures = {
         'settings': {'whitelist6_prefixes': {'path': '/whitelist6/prefixes'}},
         'general': True,
         'inpolicy': False,
+    },
+    'bpf': {
+        'switch': {'path': '/bpf/switch'},
+        'settings': {'bpf_settings': {'path': '/bpf/settings'}},
+        'general': False,
+        'inpolicy': True,
+    },
+    'geo': {
+        'switch': {'path': '/geo/switch'},
+        'settings': {
+            'geo_rules': {'path': '/geo/rules'}
+        },
+        'general': False,
+        'inpolicy': True,
+    },
+    'packetCapture': {
+        'settings': {
+            'autocapture_settings': {
+                'path': '/packetCapture/autodetect/settings',
+                'backup_func': _get_autocapture_setting
+            }
+        },
+        'general': False,
+        'inpolicy': True,
     },
 }
 

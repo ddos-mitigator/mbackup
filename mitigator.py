@@ -11,7 +11,7 @@ from __restore import Restore
 
 
 class Mitigator(Backup, Restore):
-    _supported_version = 'v20.02'
+    _supported_version = 'v20.06'
 
     def __init__(self, server, username, password, insecure=False):
         self.server = server
