@@ -112,6 +112,8 @@ class MRequest:
                 request, context=CTX if MRequest.insecure else None, timeout=MRequest.timeout
             )
             MRequest.timeout = MRequest.TIMEOUT_DEF
+
+            return json.load(response)['data']
         except urllib.error.HTTPError as e:
             if e.code != 404:
                 raise MOthException(
@@ -123,5 +125,3 @@ class MRequest:
             raise M404Exception(f'{url} => 404 {e.msg}')
         except urllib.error.URLError as e:
             MOthException(e)
-
-        return json.load(response)['data']

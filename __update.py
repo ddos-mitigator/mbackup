@@ -9,8 +9,8 @@ import _mbase
 
 
 class Update:
-    _target_version = 'v20.02'
-    _supported_version = 'v19.12'
+    _target_version = 'v20.06'
+    _supported_version = 'v20.02'
 
     def __init__(self):
         self.autodetect_params = dict()
@@ -69,71 +69,73 @@ class Update:
 
         for _policy_name, _policy in self.protection_params.items():
 
-            _atls_settings_settings_data = (
-                _policy.get('atls', dict()).get('settings', dict()).get('atls_settings', dict()).get('data')
+            _val_settings_settings_data = (
+                _policy.get('val', dict()).get('settings', dict()).get('val_settings', dict()).get('data')
             )
-            if _atls_settings_settings_data:
-                _atls_settings_settings_data['min_truncated_size'] = _atls_settings_settings_data.get(
-                    'min_frag_size', 1400
-                )
-                _atls_settings_settings_data['max_invalid_size'] = 0
+            if _val_settings_settings_data:
+                _val_settings_settings_data['tcp_drop_odd_mss'] = False
 
-                try:
-                    del _atls_settings_settings_data['min_frag_size']
-                except KeyError:
-                    pass
+            _tcpFloodProt_settings_settings_data = (
+                _policy.get('tcpFloodProt', dict())
+                .get('settings', dict())
+                .get('tcpFloodProt_settings', dict())
+                .get('data')
+            )
+            if _tcpFloodProt_settings_settings_data:
+                _tcpFloodProt_settings_settings_data[
+                    'idle_timeout'
+                ] = _tcpFloodProt_settings_settings_data.get('strict_cleanup_period', 30)
+
+                for key in ['strict_cleanup_period', 'strict_idle_timeout', 'ack_mode_indicator']:
+                    try:
+                        del _tcpFloodProt_settings_settings_data[key]
+                    except KeyError:
+                        pass
+
+            _mcr_settings_settings_data = (
+                _policy.get('mcr', dict()).get('settings', dict()).get('mcr_settings', dict()).get('data')
+            )
+            if _mcr_settings_settings_data:
+                _mcr_settings_settings_data['key'] = _mcr_settings_settings_data['key'].encode().hex()
+
+                if 'ack_mode_indicator' in _mcr_settings_settings_data:
+                    del _mcr_settings_settings_data['ack_mode_indicator']
 
             _crb_settings_settings_data = (
-                _policy.get('crb', dict()).get('settings', dict()).get('crb_settings', dict()).get('data')
+                _policy.get('crb', dict()).get('settings', dict()).get('crb_settings', dict()).get('data', dict())
             )
-            if _crb_settings_settings_data:
-                _crb_settings_settings_data['averaging_period'] = 1
-
-            _lcon_settings = _policy.get('lcon', dict()).get('settings')
-            if _lcon_settings:
-                _lcon_settings_advanced_data = _lcon_settings.get('lcon_advanced', dict()).get('data')
-                _lcon_settings_config_data = _lcon_settings.get('lcon_config', dict()).get('data')
-                if _lcon_settings_config_data:
-                    _lcon_settings['lcon_settings'] = {
-                        'path': '/lcon/settings',
-                        'data': {
-                            'limit': _lcon_settings_config_data.get('limit'),
-                            'conn_timeout': _lcon_settings_advanced_data.get('idle_max')
-                            if _lcon_settings_advanced_data
-                            else 120,
-                            'block': _lcon_settings_config_data.get('block'),
-                            'block_time': _lcon_settings_config_data.get('block_time'),
-                        },
-                    }
-
-                for key in ['lcon_advanced', 'lcon_config']:
-                    try:
-                        del _lcon_settings[key]
-                    except KeyError:
-                        pass
-
-            _slow_settings_settings_data = (
-                _policy.get('slow', dict()).get('settings', dict()).get('slow_settings', dict()).get('data')
-            )
-            if _slow_settings_settings_data:
-                _slow_settings_settings_data['fragments'] = _slow_settings_settings_data.get('parts_max', 10)
-                _slow_settings_settings_data['conn_timeout'] = _slow_settings_settings_data.get('idle_max', 5)
-                _slow_settings_settings_data['violations'] = _slow_settings_settings_data.get(
-                    'violations_max', 20
-                )
-
-                for key in ['parts_max', 'idle_max', 'violations_max']:
-                    try:
-                        del _slow_settings_settings_data[key]
-                    except KeyError:
-                        pass
-
-            _spli_settings_settings_data = (
-                _policy.get('spli', dict()).get('settings', dict()).get('spli_settings', dict()).get('data')
-            )
-            if _spli_settings_settings_data:
-                _spli_settings_settings_data['idle_timeout'] = 30
+            if 'limit' not in _crb_settings_settings_data:
+                try:
+                    del _policy['crb']
+                except KeyError:
+                    pass
 
             self.protection_params[_policy_name] = {k: _policy[k] for k in sorted(_policy)}
 
         _mbase._recursive_cleanup(self.protection_params)
+
+
+        ### UPDATING AUTODETECT
+        logging.info('updating autodetect params')
+
+        _autodetect_global_switch = self.autodetect_params.pop('switch', dict())
+
+        for _policy_id, _policy in self.autodetect_params.items():
+            if _policy:
+                _new_policy_data = {'cm_timings': [], 'cm_switchs': []}
+
+                _new_policy_data['custom_metrics'] = _policy.pop('custom_metrics', dict())
+                _new_policy_data['timings'] = _policy.pop('timings', dict())
+
+                _keys = _policy.keys()
+
+                for key in _keys:
+                    if key.startswith('timings_'):
+                        _new_policy_data['cm_timings'].append({key[len('timings_') :]: _policy[key]})
+
+                    if key.startswith('switch_'):
+                        _new_policy_data['cm_switchs'].append({key[len('switch_') :]: _policy[key]})
+
+                _policy = _new_policy_data
+
+        _mbase._recursive_cleanup(self.autodetect_params)

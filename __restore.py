@@ -31,6 +31,9 @@ class Restore:
         if self.autodetect_params:
             logging.info('resetting autodetect')
             self._resetup_autodetect()
+        if self.policies:
+            logging.info('resetting policies autodetect parameters')
+            self._resetup_policies_autodetect()
         if self.bgp:
             logging.info('resetting bgp parameters')
             self._resetup_bgp()
@@ -59,7 +62,7 @@ class Restore:
                     method='PUT',
                     data={
                         'name': _old_policy_data.get('name'),
-                        'auto_mitigation': _old_policy_data.get('auto_mitigation'),
+                        'auto_mitigation': False,
                         'description': _old_policy_data.get('description'),
                     },
                 )
@@ -75,7 +78,7 @@ class Restore:
                 path='/policies/policy',
                 data={
                     'name': _old_policy_data.get('name'),
-                    'auto_mitigation': _old_policy_data.get('auto_mitigation'),
+                    'auto_mitigation': False,
                     'description': _old_policy_data.get('description'),
                 },
             )['id']
@@ -102,9 +105,11 @@ class Restore:
                     'policy_id'
                 ] = self._old_new_policies_map[str(_record['value']['policy_id'])]
             if self._old_new_groups_map:
-                self.rules['patches'][index]['group_id'] = self._old_new_groups_map.get(
-                    str(patch['group_id'])
-                )
+                __old_patch_group_id = patch.get('group_id')
+                if __old_patch_group_id:
+                    __new_group_id = self._old_new_groups_map.get(str(__old_patch_group_id))
+                    if __new_group_id:
+                        self.rules['patches'][index]['group_id'] = __new_group_id
 
         _mbase._set_simple(
             req_func=self.req, settings={'path': '/policySwitch/rules', 'data': self.rules}, method='PATCH'
@@ -139,19 +144,76 @@ class Restore:
                     _mbase._set_simple(req_func=self.req, settings=_cm_switch, policy=policy)
 
     def _resetup_autodetect(self):
-        _mbase._set_simple(
-            req_func=self.req,
-            settings={'path': '/autodetect/switch', 'data': self.autodetect_params['switch']},
-        )
-        for _old_policy_id in self._old_new_policies_map:
+        _global_switch = self.autodetect_params.get('switch')
+        if _global_switch:
             _mbase._set_simple(
-                req_func=self.req,
-                settings=self.autodetect_params[_old_policy_id],
-                policy=self._old_new_policies_map[_old_policy_id],
+                req_func=self.req, settings={'path': '/autodetect/switch', 'data': _global_switch},
+            )
+
+        for _old_policy_id in self._old_new_policies_map:
+
+            _custom_metrics = self.autodetect_params[_old_policy_id].get('custom_metrics')
+            _timings = self.autodetect_params[_old_policy_id].get('timings')
+            _cm_timings = self.autodetect_params[_old_policy_id].get('cm_timings', list())
+            _cm_switchs = self.autodetect_params[_old_policy_id].get('cm_switchs', list())
+
+            if _custom_metrics:
+                self.req(
+                    path='/autodetect/custom_metrics',
+                    method='PUT',
+                    policy=self._old_new_policies_map[_old_policy_id],
+                    data=_custom_metrics,
+                )
+
+            if _timings:
+                self.req(
+                    path='/autodetect/timings',
+                    method='PUT',
+                    policy=self._old_new_policies_map[_old_policy_id],
+                    data=_timings,
+                )
+
+            for _cm_timing in _cm_timings:
+                _cm_timing_key, _cm_timing_data = _cm_timing.popitem()
+                self.req(
+                    path=f'/autodetect/timings/{_cm_timing_key}',
+                    method='PUT',
+                    policy=self._old_new_policies_map[_old_policy_id],
+                    data=_cm_timing_data,
+                )
+
+            for _cm_switch in _cm_switchs:
+                _cm_switch_key, _cm_switch_data = _cm_switch.popitem()
+                self.req(
+                    path=f'/autodetect/switch/{_cm_switch_key}',
+                    method='PUT',
+                    policy=self._old_new_policies_map[_old_policy_id],
+                    data=_cm_switch_data,
+                )
+
+    def _resetup_policies_autodetect(self):
+        for _old_policy_id, _old_policy_data in self.policies.items():
+            if _old_policy_data.get('is_default', False):
+                self.req(
+                    path='/policies/policy/1',
+                    method='PUT',
+                    data={
+                        'name': _old_policy_data.get('name'),
+                        'auto_mitigation': _old_policy_data.get('auto_mitigation'),
+                    },
+                )
+                continue
+
+            self.req(
+                path=f'/policies/policy/{self._old_new_policies_map[_old_policy_id]}',
+                method='PUT',
+                data={
+                    'name': _old_policy_data.get('name'),
+                    'auto_mitigation': _old_policy_data.get('auto_mitigation'),
+                },
             )
 
     def _resetup_bgp(self):
-        _bgp_announce = self.bgp.get('announce', dict())
         _bgp_community_lists = self.bgp.get('community_lists', list())
         _bgp_flowspec_lists = self.bgp.get('flowspec_lists', list())
         _bgp_global = self.bgp.get('global')
@@ -182,6 +244,10 @@ class Restore:
 
         if _bgp_neighbors:
             for _record in _bgp_neighbors:
+                __record_group_id = _record.get('group_id')
+                if __record_group_id:
+                    _record['group_id'] = self._old_new_groups_map.get(str(__record_group_id))
+
                 __old_record_id = _record['id']
                 del _record['id']
                 __neighbors_map[__old_record_id] = self.req(path='/bgp/neighbors', data=_record)['id']
@@ -230,6 +296,3 @@ class Restore:
 
         if _bgp_global:
             self.req(path='/bgp/global', method='PUT', data=_bgp_global)
-
-        if _bgp_announce and _bgp_announce.get('switch'):
-            self.req(path='/bgp/announce', method='PUT', data=_bgp_announce)

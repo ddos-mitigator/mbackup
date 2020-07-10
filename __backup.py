@@ -44,7 +44,6 @@ class Backup:
             indent=4 if pretty else None,
         )
 
-    # TODO: policies switches
     # TODO: /policies/settings/ ??
     def _get_policies(self):
         _policies = self.req(path='/policies/policies')['policies']
@@ -160,19 +159,19 @@ class Backup:
                 }
                 if _type_id == 3:
                     _patch['before'] = 1
-                _mbase._recursive_cleanup(_patch)
                 obj = {
                     'type_id': _type_id,
                     'group_id': rule.get('group_id'),
                     'version': 1 if _type_id == 3 else 0,
                     'patch': [_patch],
                 }
+                _mbase._recursive_cleanup(obj)
                 self.rules['patches'].append(obj)
 
     def _get_autodetect_params(self):
         self.autodetect_params['switch'] = self.req(path='/autodetect/switch')
         for policy in self.policies:
-            self.autodetect_params[policy] = {'path': '/autodetect'}
+            self.autodetect_params[policy] = {'cm_timings': [], 'cm_switchs': []}
             _mbase._get_autodetect_setting(
                 req_func=self.req, settings=self.autodetect_params[policy], policy=policy
             )
@@ -180,7 +179,12 @@ class Backup:
         _mbase._recursive_cleanup(self.autodetect_params)
 
     def _get_bgp_params(self):
-        self.bgp = self.req(path='/bgp')
+        self.bgp = dict()
+        self.bgp.update(self.req(path='/bgp/community_lists'))
+        self.bgp.update(self.req(path='/bgp/flowspec_lists'))
+        self.bgp.update(self.req(path='/bgp/global'))
+        self.bgp.update(self.req(path='/bgp/neighbors'))
+        self.bgp.update(self.req(path='/bgp/prefix_lists'))
 
         self.bgp['neighbors_policies'] = dict()
         for neighbor in self.bgp.get('neighbors', list()):
