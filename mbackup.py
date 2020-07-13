@@ -125,8 +125,6 @@ def main(options):
             logging.error('retry restore not support, reset your mitigator database')
 
     elif options.task == 'update-file':
-        sys.exit('update function temporarily unavailable')
-
         import __update
 
         if not (_input and _output):

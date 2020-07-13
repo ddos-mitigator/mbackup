@@ -102,18 +102,24 @@ class Update:
                     del _mcr_settings_settings_data['ack_mode_indicator']
 
             _crb_settings_settings_data = (
-                _policy.get('crb', dict()).get('settings', dict()).get('crb_settings', dict()).get('data', dict())
+                _policy.get('crb', dict())
+                .get('settings', dict())
+                .get('crb_settings', dict())
+                .get('data', dict())
             )
+            print(_crb_settings_settings_data, _policy_name, 'limit' not in _crb_settings_settings_data)
             if 'limit' not in _crb_settings_settings_data:
-                try:
+                if 'crb' in _policy:
                     del _policy['crb']
-                except KeyError:
-                    pass
+                if self.autodetect_params and _policy_name in self.autodetect_params:
+                    if 'switch_crb' in self.autodetect_params[_policy_name]['data']:
+                        del self.autodetect_params[_policy_name]['data']['switch_crb']
+                    if 'timings_crb' in self.autodetect_params[_policy_name]['data']:
+                        del self.autodetect_params[_policy_name]['data']['timings_crb']
 
             self.protection_params[_policy_name] = {k: _policy[k] for k in sorted(_policy)}
 
         _mbase._recursive_cleanup(self.protection_params)
-
 
         ### UPDATING AUTODETECT
         logging.info('updating autodetect params')
