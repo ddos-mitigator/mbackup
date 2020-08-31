@@ -7,7 +7,7 @@ import logging
 import mitigator
 
 
-PROG_VERSION = '3.2006.0'
+PROG_VERSION = '3.2008.2'
 
 
 def parse_options(args):
@@ -91,7 +91,7 @@ def main(options):
 
     if options.task == 'backup':
         if not (_server and _user and _passwd and _output):
-            sys.exit(f'for backup --server, --user, --passwd and --output is required')
+            sys.exit('for backup --server, --user, --passwd and --output is required')
 
         logging.info('getting authtoken on mitigator server')
         _mitigator = mitigator.Mitigator(_server, _user, _passwd, _insecure)
@@ -107,7 +107,7 @@ def main(options):
 
     elif options.task == 'restore':
         if not (_server and _user and _passwd and _input):
-            sys.exit(f'for restore --server, --user, --passwd and --input is required')
+            sys.exit('for restore --server, --user, --passwd and --input is required')
 
         _mitigator = mitigator.Mitigator(_server, _user, _passwd, _insecure)
 
@@ -128,7 +128,7 @@ def main(options):
         import __update
 
         if not (_input and _output):
-            sys.exit(f'for update-file --input and --output is required')
+            sys.exit('for update-file --input and --output is required')
 
         _upd = __update.Update()
 

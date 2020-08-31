@@ -9,8 +9,8 @@ import _mbase
 
 
 class Update:
-    _target_version = 'v20.06'
-    _supported_version = 'v20.02'
+    _target_version = 'v20.08'
+    _supported_version = 'v20.06'
 
     def __init__(self):
         self.autodetect_params = dict()
@@ -64,84 +64,426 @@ class Update:
         elif self._supported_version not in self.version:
             sys.exit(f'FATAL ERROR: do not support updating from {self.version} to {self._target_version}')
 
-        ### UPDATING PROTECTION PARAMS
+        # UPDATING PROTECTION PARAMS
         logging.info('updating protection params')
 
         for _policy_name, _policy in self.protection_params.items():
 
-            _val_settings_settings_data = (
-                _policy.get('val', dict()).get('settings', dict()).get('val_settings', dict()).get('data')
+            blacklist_switch = _policy.get('blacklist', dict()).get('switch', dict()).get('data')
+            blacklist_data = (
+                _policy.get('blacklist', dict())
+                .get('settings', dict())
+                .get('blacklist_prefixes', dict())
+                .get('data')
             )
-            if _val_settings_settings_data:
-                _val_settings_settings_data['tcp_drop_odd_mss'] = False
+            if blacklist_data:
+                _policy['bl'] = {
+                    'switch': {'path': '/bl/switch', 'data': copy.deepcopy(blacklist_switch)},
+                    'settings': {
+                        'bl_prefixes': {'path': '/bl/prefixes', 'data': copy.deepcopy(blacklist_data)}
+                    },
+                    'general': True,
+                    'inpolicy': True,
+                }
+                del _policy['blacklist']
 
-            _tcpFloodProt_settings_settings_data = (
+            blacklist6_switch = _policy.get('blacklist6', dict()).get('switch', dict()).get('data')
+            blacklist6_data = (
+                _policy.get('blacklist6', dict())
+                .get('settings', dict())
+                .get('blacklist6_prefixes', dict())
+                .get('data')
+            )
+            if blacklist6_data:
+                _policy['bl6'] = {
+                    'switch': {'path': '/bl6/switch', 'data': copy.deepcopy(blacklist6_switch)},
+                    'settings': {
+                        'bl6_prefixes': {'path': '/bl6/prefixes', 'data': copy.deepcopy(blacklist6_data)}
+                    },
+                    'general': True,
+                    'inpolicy': False,
+                }
+                del _policy['blacklist6']
+
+            bgpAcl_switch = _policy.get('bgpAcl', dict()).get('switch', dict()).get('data')
+            if bgpAcl_switch:
+                _policy['facl'] = {'switch': {'path': '/facl/switch', 'data': copy.deepcopy(bgpAcl_switch)}, 'general': True, 'inpolicy': False}
+                del _policy['bgpAcl']
+
+            httpFloodProt_switch = _policy.get('httpFloodProt', dict()).get('switch', dict()).get('data')
+            httpFloodProt_data = (
+                _policy.get('httpFloodProt', dict())
+                .get('settings', dict())
+                .get('httpFloodProt_settings', dict())
+                .get('data')
+            )
+            if httpFloodProt_data:
+                _policy['http'] = {
+                    'switch': {'path': '/http/switch', 'data': copy.deepcopy(httpFloodProt_switch)},
+                    'settings': {
+                        'http_settings': {'path': '/http/settings', 'data': copy.deepcopy(httpFloodProt_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['httpFloodProt']
+
+            rateLimiter_switch = _policy.get('rateLimiter', dict()).get('switch', dict()).get('data')
+            rateLimiter_data = (
+                _policy.get('rateLimiter', dict())
+                .get('settings', dict())
+                .get('rateLimiter_settings', dict())
+                .get('data')
+            )
+            if rateLimiter_data:
+                _policy['lim'] = {
+                    'switch': {'path': '/lim/switch', 'data': copy.deepcopy(rateLimiter_switch)},
+                    'settings': {
+                        'lim_settings': {'path': '/lim/settings', 'data': copy.deepcopy(rateLimiter_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['rateLimiter']
+
+            rateLimiter6_switch = _policy.get('rateLimiter6', dict()).get('switch', dict()).get('data')
+            rateLimiter6_data = (
+                _policy.get('rateLimiter6', dict())
+                .get('settings', dict())
+                .get('rateLimiter6_settings', dict())
+                .get('data')
+            )
+            if rateLimiter6_data:
+                _policy['lim6'] = {
+                    'switch': {'path': '/lim6/switch', 'data': copy.deepcopy(rateLimiter6_switch)},
+                    'settings': {
+                        'lim6_settings': {'path': '/lim6/settings', 'data': copy.deepcopy(rateLimiter6_data)}
+                    },
+                    'general': True,
+                    'inpolicy': False,
+                }
+                del _policy['rateLimiter6']
+
+            sourceLimiter_switch = _policy.get('sourceLimiter', dict()).get('switch', dict()).get('data')
+            sourceLimiter_data = (
+                _policy.get('sourceLimiter', dict())
+                .get('settings', dict())
+                .get('sourceLimiter_settings', dict())
+                .get('data')
+            )
+            if sourceLimiter_data:
+                _policy['sorb'] = {
+                    'switch': {'path': '/sorb/switch', 'data': copy.deepcopy(sourceLimiter_switch)},
+                    'settings': {
+                        'sorb_settings': {'path': '/sorb/settings', 'data': copy.deepcopy(sourceLimiter_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['sourceLimiter']
+
+            tcpFloodProt_switch = _policy.get('tcpFloodProt', dict()).get('switch', dict()).get('data')
+            tcpFloodProt_data = (
                 _policy.get('tcpFloodProt', dict())
                 .get('settings', dict())
                 .get('tcpFloodProt_settings', dict())
                 .get('data')
             )
-            if _tcpFloodProt_settings_settings_data:
-                _tcpFloodProt_settings_settings_data[
-                    'idle_timeout'
-                ] = _tcpFloodProt_settings_settings_data.get('strict_cleanup_period', 30)
+            if tcpFloodProt_data:
+                _policy['tcp'] = {
+                    'switch': {'path': '/tcp/switch', 'data': copy.deepcopy(tcpFloodProt_switch)},
+                    'settings': {
+                        'tcp_settings': {'path': '/tcp/settings', 'data': copy.deepcopy(tcpFloodProt_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['tcpFloodProt']
 
-                for key in ['strict_cleanup_period', 'strict_idle_timeout', 'ack_mode_indicator']:
-                    try:
-                        del _tcpFloodProt_settings_settings_data[key]
-                    except KeyError:
-                        pass
-
-            _mcr_settings_settings_data = (
-                _policy.get('mcr', dict()).get('settings', dict()).get('mcr_settings', dict()).get('data')
-            )
-            if _mcr_settings_settings_data:
-                _mcr_settings_settings_data['key'] = _mcr_settings_settings_data['key'].encode().hex()
-
-                if 'ack_mode_indicator' in _mcr_settings_settings_data:
-                    del _mcr_settings_settings_data['ack_mode_indicator']
-
-            _crb_settings_settings_data = (
-                _policy.get('crb', dict())
+            tlsFloodProt_switch = _policy.get('tlsFloodProt', dict()).get('switch', dict()).get('data')
+            tlsFloodProt_data = (
+                _policy.get('tlsFloodProt', dict())
                 .get('settings', dict())
-                .get('crb_settings', dict())
+                .get('tlsFloodProt_settings', dict())
+                .get('data')
+            )
+            if tlsFloodProt_data:
+                _policy['itls'] = {
+                    'switch': {'path': '/itls/switch', 'data': copy.deepcopy(tlsFloodProt_switch)},
+                    'settings': {
+                        'itls_settings': {'path': '/itls/settings', 'data': copy.deepcopy(tlsFloodProt_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['tlsFloodProt']
+
+            tempBlacklist_data = (
+                _policy.get('tempBlacklist', dict())
+                .get('settings', dict())
+                .get('tempBlacklist_settings', dict())
+                .get('data')
+            )
+            if tempBlacklist_data:
+                _policy['tbl'] = {
+                    'settings': {
+                        'tbl_settings': {'path': '/tbl/settings', 'data': copy.deepcopy(tempBlacklist_data)}
+                    },
+                    'general': True,
+                    'inpolicy': True,
+                }
+                del _policy['tempBlacklist']
+
+            whitelist_switch = _policy.get('whitelist', dict()).get('switch', dict()).get('data')
+            whitelist_data = (
+                _policy.get('whitelist', dict())
+                .get('settings', dict())
+                .get('whitelist_prefixes', dict())
+                .get('data')
+            )
+            if whitelist_data:
+                _policy['wl'] = {
+                    'switch': {'path': '/wl/switch', 'data': copy.deepcopy(whitelist_switch)},
+                    'settings': {
+                        'wl_prefixes': {'path': '/wl/prefixes', 'data': copy.deepcopy(whitelist_data)}
+                    },
+                    'general': True,
+                    'inpolicy': True,
+                }
+                del _policy['whitelist']
+
+            whitelist6_switch = _policy.get('whitelist6', dict()).get('switch', dict()).get('data')
+            whitelist6_data = (
+                _policy.get('whitelist6', dict())
+                .get('settings', dict())
+                .get('whitelist6_prefixes', dict())
+                .get('data')
+            )
+            if whitelist6_data:
+                _policy['wl6'] = {
+                    'switch': {'path': '/wl6/switch', 'data': copy.deepcopy(whitelist6_switch)},
+                    'settings': {
+                        'wl6_prefixes': {'path': '/wl6/prefixes', 'data': copy.deepcopy(whitelist6_data)}
+                    },
+                    'general': True,
+                    'inpolicy': False,
+                }
+                del _policy['whitelist6']
+
+            gre_switch = _policy.get('gre', dict()).get('switch', dict()).get('data')
+            gre_data = (
+                _policy.get('gre', dict())
+                .get('settings', dict())
+                .get('gre_settings', dict())
+                .get('data')
+            )
+            if gre_data:
+                _policy['tun'] = {
+                    'switch': {'path': '/tun/switch', 'data': copy.deepcopy(gre_switch)},
+                    'settings': {
+                        'tun_settings': {'path': '/tun/settings', 'data': copy.deepcopy(gre_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['gre']
+
+            game_data = (
+                _policy.get('game', dict())
+                .get('settings', dict())
+                .get('game_settings', dict())
+                .get('data')
+            )
+            if game_data:
+                game_data['learning'] = False
+                game_data['learning_period'] = 10
+
+            val_data = (
+                _policy.get('val', dict())
+                .get('settings', dict())
+                .get('val_settings', dict())
+                .get('data')
+            )
+            if val_data:
+                val_data['tcp_drop_zero_seqnum'] = False
+                val_data['tcpudp_drop_zero_port'] = False
+                val_data['tcp_drop_syn_without_options'] = False
+                val_data['tcp_drop_syn_with_data'] = False
+
+            frb_data = (
+                _policy.get('frb', dict())
+                .get('settings', dict())
+                .get('frb_settings', dict())
                 .get('data', dict())
             )
-            print(_crb_settings_settings_data, _policy_name, 'limit' not in _crb_settings_settings_data)
-            if 'limit' not in _crb_settings_settings_data:
-                if 'crb' in _policy:
-                    del _policy['crb']
-                if self.autodetect_params and _policy_name in self.autodetect_params:
-                    if 'switch_crb' in self.autodetect_params[_policy_name]['data']:
-                        del self.autodetect_params[_policy_name]['data']['switch_crb']
-                    if 'timings_crb' in self.autodetect_params[_policy_name]['data']:
-                        del self.autodetect_params[_policy_name]['data']['timings_crb']
+            if not frb_data.get('use_default') and frb_data.get('rules'):
+                frb_data['scope'] = 2
+            elif frb_data.get('use_default') and (frb_data.get('limit_packets') or frb_data.get('limit_bits')):
+                frb_data['scope'] = 2
+            else:
+                _policy['frb'] = dict()
 
-            self.protection_params[_policy_name] = {k: _policy[k] for k in sorted(_policy)}
+            atls_data = (
+                _policy.get('atls', dict())
+                .get('settings', dict())
+                .get('atls_settings', dict())
+                .get('data')
+            )
+            if atls_data:
+                atls_data['min_version'] = 'Tls10'
 
-        _mbase._recursive_cleanup(self.protection_params)
+            for rex in ('rex', 'rex6'):
+                rex_data = (
+                    _policy.get(rex, dict())
+                    .get('settings', dict())
+                    .get(f'{rex}_settings', dict())
+                    .get('data')
+                )
+                if rex_data:
+                    rex_data['scope'] = 2
 
-        ### UPDATING AUTODETECT
+            bpf_data = (
+                _policy.get('bpf', dict())
+                .get('settings', dict())
+                .get('bpf_settings', dict())
+                .get('data')
+            )
+            if bpf_data:
+                bpf_data['bps'] = None
+                bpf_data['pps'] = None
+                bpf_data['refill_interval'] = 10
+
+            packetCapture_data = (
+                _policy.get('packetCapture', dict())
+                .get('settings', dict())
+                .get('autocapture_settings', dict())
+                .get('data')
+            )
+            if packetCapture_data:
+                _policy['pcap'] = {
+                    'settings': {
+                        'autocapture_settings': {'path': '/pcap/autodetect/settings', 'data': copy.deepcopy(packetCapture_data)}
+                    },
+                    'general': False,
+                    'inpolicy': True,
+                }
+                del _policy['packetCapture']
+
+        _mbase._recursive_cleanup(self.autodetect_params)
+
+        # UPDATING AUTODETECT
         logging.info('updating autodetect params')
-
-        _autodetect_global_switch = self.autodetect_params.pop('switch', dict())
 
         for _policy_id, _policy in self.autodetect_params.items():
             if _policy:
-                _new_policy_data = {'cm_timings': [], 'cm_switchs': []}
+                if 'cm_timings' in _policy:
+                    elems = _policy['cm_timings']
+                    for elem in elems:
+                        key, value = elem.popitem()
+                        if key == 'blacklist':
+                            elem['bl'] = value
 
-                _new_policy_data['custom_metrics'] = _policy.pop('custom_metrics', dict())
-                _new_policy_data['timings'] = _policy.pop('timings', dict())
+                        elif key == 'bgpAcl':
+                            elem['facl'] = value
 
-                _keys = _policy.keys()
+                        elif key == 'httpFloodProt':
+                            elem['http'] = value
 
-                for key in _keys:
-                    if key.startswith('timings_'):
-                        _new_policy_data['cm_timings'].append({key[len('timings_') :]: _policy[key]})
+                        elif key == 'rateLimiter':
+                            elem['lim'] = value
 
-                    if key.startswith('switch_'):
-                        _new_policy_data['cm_switchs'].append({key[len('switch_') :]: _policy[key]})
+                        elif key == 'rateLimiter6':
+                            elem['lim6'] = value
 
-                _policy = _new_policy_data
+                        elif key == 'sourceLimiter':
+                            elem['sorb'] = value
+
+                        elif key == 'tcpFloodProt':
+                            elem['tcp'] = value
+
+                        elif key == 'tlsFloodProt':
+                            elem['itls'] = value
+
+                        elif key == 'whitelist':
+                            elem['wl'] = value
+
+                        elif key == 'packetCapture':
+                            elem['pcap'] = value
+
+                        else:
+                            elem[key] = value
+
+                if 'cm_switchs' in _policy:
+                    elems = _policy['cm_switchs']
+                    for elem in elems:
+                        key, value = elem.popitem()
+                        if key == 'blacklist':
+                            elem['bl'] = value
+
+                        elif key == 'bgpAcl':
+                            elem['facl'] = value
+
+                        elif key == 'httpFloodProt':
+                            elem['http'] = value
+
+                        elif key == 'rateLimiter':
+                            elem['lim'] = value
+
+                        elif key == 'rateLimiter6':
+                            elem['lim6'] = value
+
+                        elif key == 'sourceLimiter':
+                            elem['sorb'] = value
+
+                        elif key == 'tcpFloodProt':
+                            elem['tcp'] = value
+
+                        elif key == 'tlsFloodProt':
+                            elem['itls'] = value
+
+                        elif key == 'whitelist':
+                            elem['wl'] = value
+
+                        elif key == 'packetCapture':
+                            elem['pcap'] = value
+
+                        else:
+                            elem[key] = value
+
+                if 'custom_metrics' in _policy:
+                    policy_metrics_names = [
+                        metric['metric'] for metric in _policy['custom_metrics']['custom_metrics']
+                    ]
+
+                    for required_metric in (
+                        'Policy.Status.DropBps',
+                        'Policy.Status.DropPps',
+                        'Policy.Status.InputBps',
+                        'Policy.Status.InputPps'
+                    ):
+                        if required_metric not in policy_metrics_names:
+                            _policy['custom_metrics']['custom_metrics'].append(
+                                {"metric": required_metric, "value": "0"}
+                            )
+
+        # UPDATING BGP PARAMETERS
+        logging.info('updating bgp parameters')
+
+        if self.bgp:
+            if self.bgp.get('prefix_lists'):
+                _new_prefix_lists = list()
+                for prefix_list in self.bgp.get('prefix_lists'):
+                    if prefix_list['prefixes']:
+                        _new_prefix_lists.append(
+                            {'prefixes': '\n'.join(prefix_list['prefixes']), 'name': prefix_list['name']}
+                        )
+                    else:
+                        if self.bgp["neighbors_policies"].get(str(prefix_list['id'])):
+                            del self.bgp["neighbors_policies"][str(prefix_list['id'])]
+                self.bgp['prefix_lists'] = _new_prefix_lists
+
+            if self.bgp.get('flowspec_lists'):
+                for flowspec_list in self.bgp.get('flowspec_lists'):
+                    flowspec_list['flowspecs'] = '\n'.join(flowspec_list['flowspecs'])
 
         _mbase._recursive_cleanup(self.autodetect_params)

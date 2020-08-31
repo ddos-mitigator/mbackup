@@ -172,7 +172,7 @@ class Backup:
                 self.rules['patches'].append(obj)
 
     def _get_autodetect_params(self):
-        self.autodetect_params['switch'] = self.req(path='/autodetect/switch')
+        self.autodetect_params['switch'] = self.req(path='/system/autodetect/switch')
         for policy in self.policies:
             self.autodetect_params[policy] = {'cm_timings': [], 'cm_switchs': []}
             _mbase._get_autodetect_setting(
@@ -185,9 +185,11 @@ class Backup:
         self.bgp = dict()
         self.bgp.update(self.req(path='/bgp/community_lists'))
         self.bgp.update(self.req(path='/bgp/flowspec_lists'))
-        self.bgp.update({'global': self.req(path='/bgp/global')})
         self.bgp.update(self.req(path='/bgp/neighbors'))
         self.bgp.update(self.req(path='/bgp/prefix_lists'))
+
+        bgp_global = self.req(path='/bgp/global')
+        self.bgp.update({'global': bgp_global if bgp_global.get('active') else {}})
 
         self.bgp['neighbors_policies'] = dict()
         for neighbor in self.bgp.get('neighbors', list()):
