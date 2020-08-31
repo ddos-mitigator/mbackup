@@ -172,7 +172,7 @@ class Backup:
                 self.rules['patches'].append(obj)
 
     def _get_autodetect_params(self):
-        self.autodetect_params['switch'] = self.req(path='/autodetect/switch')
+        self.autodetect_params['switch'] = self.req(path='/system/autodetect/switch')
         for policy in self.policies:
             self.autodetect_params[policy] = {'cm_timings': [], 'cm_switchs': []}
             _mbase._get_autodetect_setting(

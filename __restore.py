@@ -162,14 +162,14 @@ class Restore:
                         req_func=self.req, settings=_s_data, policy=policy, method=_s_data.get('add_method')
                     )
 
-                if (_cm_switch and _cm_settings) or (_cm_key == 'bgpAcl'):
+                if (_cm_switch and _cm_settings) or (_cm_key == 'facl'):
                     _mbase._set_simple(req_func=self.req, settings=_cm_switch, policy=policy)
 
     def _resetup_autodetect_parameters(self):
         _global_switch = self.autodetect_params.get('switch')
         if _global_switch:
             _mbase._set_simple(
-                req_func=self.req, settings={'path': '/autodetect/switch', 'data': _global_switch},
+                req_func=self.req, settings={'path': '/system/autodetect/switch', 'data': _global_switch},
             )
 
         for _old_policy_id in self._old_new_policies_map:
@@ -208,6 +208,9 @@ class Restore:
             _cm_switchs = self.autodetect_params[_old_policy_id].get('cm_switchs', list())
             for _cm_switch in _cm_switchs:
                 _cm_switch_key, _cm_switch_data = _cm_switch.popitem()
+                if _cm_switch_key == 'wafr':
+                    continue
+
                 self.req(
                     path=f'/autodetect/switch/{_cm_switch_key}',
                     method='PUT',
