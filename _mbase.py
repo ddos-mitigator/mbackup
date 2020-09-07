@@ -28,14 +28,7 @@ def _get_game_setting(req_func, settings, policy):
         settings['data'] = copy.deepcopy(_data)
 
 
-def _get_gre_setting(req_func, settings, policy):
-    _data = req_func(path=settings['path'], policy=policy)
-    if 'switch' in _data:
-        del _data['switch']
-    settings['data'] = copy.deepcopy(_data)
-
-
-def _get_httpfloodprot_setting(req_func, settings, policy):
+def _get_http_setting(req_func, settings, policy):
     _data = req_func(path=settings['path'], policy=policy)
     if _data['type'] == 'custom':
         _data['templates'] = {
@@ -63,26 +56,19 @@ def _get_limiter_setting(req_func, settings, policy):
         settings['data'] = copy.deepcopy(_data)
 
 
-# TODO: rewrite w\o bulk request
 def _get_autodetect_setting(req_func, settings, policy):
-    _data = req_func(path='/autodetect', policy=policy)
+    settings['custom_metrics'] = req_func(path='/autodetect/custom_metrics', policy=policy)
 
-    if 'custom_metrics' in _data:
-        settings['custom_metrics'] = {'custom_metrics': _data['custom_metrics']}
+    settings['timings'] = req_func(path='/autodetect/timings', policy=policy)
 
-    settings['timings'] = _data.pop('timings', dict())
-
-    keys = _data.keys()
+    keys = req_func(path='/autodetect/countermeasures').get('countermeasures')
 
     for key in keys:
-        if key.startswith('timings_'):
-            settings['cm_timings'].append({key[len('timings_') :]: _data[key]})
-
-        if key.startswith('switch_'):
-            settings['cm_switchs'].append({key[len('switch_') :]: _data[key]})
+        settings['cm_timings'].append({key: req_func(path=f'/autodetect/timings/{key}', policy=policy)})
+        settings['cm_switchs'].append({key: req_func(path=f'/autodetect/switch/{key}', policy=policy)})
 
 
-def _get_tcpfloodprot_setting(req_func, settings, policy):
+def _get_tcp_setting(req_func, settings, policy):
     _data = req_func(path=settings['path'], policy=policy)
     if 'ack_mode_indicator' in _data:
         del _data['ack_mode_indicator']
@@ -122,16 +108,15 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'bgpAcl': {'switch': {'path': '/bgpAcl/switch'}, 'settings': dict(), 'general': True, 'inpolicy': False},
-    'blacklist': {
-        'switch': {'path': '/blacklist/switch'},
-        'settings': {'blacklist_prefixes': {'path': '/blacklist/prefixes'}},
+    'bl': {
+        'switch': {'path': '/bl/switch'},
+        'settings': {'bl_prefixes': {'path': '/bl/prefixes'}},
         'general': True,
         'inpolicy': True,
     },
-    'blacklist6': {
-        'switch': {'path': '/blacklist6/switch'},
-        'settings': {'blacklist6_prefixes': {'path': '/blacklist6/prefixes'}},
+    'bl6': {
+        'switch': {'path': '/bl6/switch'},
+        'settings': {'bl6_prefixes': {'path': '/bl6/prefixes'}},
         'general': True,
         'inpolicy': False,
     },
@@ -168,6 +153,7 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
+    'facl': {'switch': {'path': '/facl/switch'}, 'settings': dict(), 'general': True, 'inpolicy': False},
     'frb': {
         'switch': {'path': '/frb/switch'},
         'settings': {'frb_settings': {'path': '/frb/settings'},},
@@ -183,51 +169,42 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'gre': {
-        'switch': {'path': '/gre/switch'},
-        'settings': {'gre_settings': {'path': '/gre/settings', 'backup_func': _get_gre_setting}},
-        'general': False,
-        'inpolicy': True,
-    },
-    'httpFloodProt': {
-        'switch': {'path': '/httpFloodProt/switch'},
-        'settings': {
-            'httpFloodProt_settings': {
-                'path': '/httpFloodProt/settings',
-                'backup_func': _get_httpfloodprot_setting,
-            }
-        },
+    'http': {
+        'switch': {'path': '/http/switch'},
+        'settings': {'http_settings': {'path': '/http/settings', 'backup_func': _get_http_setting,}},
         'general': False,
         'inpolicy': True,
     },
     'frag': {'settings': {'ipfrag_settings': {'path': '/frag/settings'}}, 'general': True, 'inpolicy': False},
+    'itls': {
+        'switch': {'path': '/itls/switch'},
+        'settings': {'itls_settings': {'path': '/itls/settings'}},
+        'general': False,
+        'inpolicy': True,
+    },
     'lcon': {
         'switch': {'path': '/lcon/switch'},
         'settings': {'lcon_settings': {'path': '/lcon/settings'}},
         'general': False,
         'inpolicy': True,
     },
+    'lim': {
+        'switch': {'path': '/lim/switch'},
+        'settings': {'lim_settings': {'path': '/lim/settings', 'backup_func': _get_limiter_setting}},
+        'general': False,
+        'inpolicy': True,
+    },
+    'lim6': {
+        'switch': {'path': '/lim6/switch'},
+        'settings': {'lim6_settings': {'path': '/lim6/settings', 'backup_func': _get_limiter_setting}},
+        'general': True,
+        'inpolicy': False,
+    },
     'mcr': {
         'switch': {'path': '/mcr/switch'},
         'settings': {'mcr_settings': {'path': '/mcr/settings', 'backup_func': _get_mcr_setting}},
         'general': False,
         'inpolicy': True,
-    },
-    'rateLimiter': {
-        'switch': {'path': '/rateLimiter/switch'},
-        'settings': {
-            'rateLimiter_settings': {'path': '/rateLimiter/settings', 'backup_func': _get_limiter_setting}
-        },
-        'general': False,
-        'inpolicy': True,
-    },
-    'rateLimiter6': {
-        'switch': {'path': '/rateLimiter6/switch'},
-        'settings': {
-            'rateLimiter6_settings': {'path': '/rateLimiter6/settings', 'backup_func': _get_limiter_setting}
-        },
-        'general': True,
-        'inpolicy': False,
     },
     'rex': {
         'switch': {'path': '/rex/switch'},
@@ -259,11 +236,9 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'sourceLimiter': {
-        'switch': {'path': '/sourceLimiter/switch'},
-        'settings': {
-            'sourceLimiter_settings': {'path': '/sourceLimiter/settings', 'backup_func': _get_limiter_setting}
-        },
+    'sorb': {
+        'switch': {'path': '/sorb/switch'},
+        'settings': {'sorb_settings': {'path': '/sorb/settings', 'backup_func': _get_limiter_setting}},
         'general': False,
         'inpolicy': True,
     },
@@ -273,44 +248,35 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
-    'tcpFloodProt': {
-        'switch': {'path': '/tcpFloodProt/switch'},
-        'settings': {
-            'tcpFloodProt_settings': {
-                'path': '/tcpFloodProt/settings',
-                'backup_func': _get_tcpfloodprot_setting,
-            }
-        },
+    'tbl': {'settings': {'tbl_settings': {'path': '/tbl/settings'}}, 'general': True, 'inpolicy': True,},
+    'tcp': {
+        'switch': {'path': '/tcp/switch'},
+        'settings': {'tcp_settings': {'path': '/tcp/settings', 'backup_func': _get_tcp_setting,}},
         'general': False,
         'inpolicy': True,
     },
-    'tempBlacklist': {
-        'settings': {'tempBlacklist_settings': {'path': '/tempBlacklist/settings'}},
-        'general': True,
-        'inpolicy': True,
-    },
-    'tlsFloodProt': {
-        'switch': {'path': '/tlsFloodProt/switch'},
-        'settings': {'tlsFloodProt_settings': {'path': '/tlsFloodProt/settings'}},
+    'tun': {
+        'switch': {'path': '/tun/switch'},
+        'settings': {'tun_settings': {'path': '/tun/settings'}},
         'general': False,
         'inpolicy': True,
     },
     'val': {'settings': {'val_settings': {'path': '/val/settings'}}, 'general': False, 'inpolicy': True},
     'wg': {
         'switch': {'path': '/wg/switch'},
-        'settings': {'wg_settings': {'path': '/wg/settings'}},
+        'settings': {'wg_settings': {'path': '/wg/settings', 'backup_func': _get_mcr_setting}},
         'general': False,
         'inpolicy': True,
     },
-    'whitelist': {
-        'switch': {'path': '/whitelist/switch'},
-        'settings': {'whitelist_prefixes': {'path': '/whitelist/prefixes'}},
+    'wl': {
+        'switch': {'path': '/wl/switch'},
+        'settings': {'wl_prefixes': {'path': '/wl/prefixes'}},
         'general': True,
         'inpolicy': True,
     },
-    'whitelist6': {
-        'switch': {'path': '/whitelist6/switch'},
-        'settings': {'whitelist6_prefixes': {'path': '/whitelist6/prefixes'}},
+    'wl6': {
+        'switch': {'path': '/wl6/switch'},
+        'settings': {'wl6_prefixes': {'path': '/wl6/prefixes'}},
         'general': True,
         'inpolicy': False,
     },

@@ -147,7 +147,7 @@ class Restore:
         _global_switch = self.autodetect_params.get('switch')
         if _global_switch:
             _mbase._set_simple(
-                req_func=self.req, settings={'path': '/autodetect/switch', 'data': _global_switch},
+                req_func=self.req, settings={'path': '/system/autodetect/switch', 'data': _global_switch},
             )
 
         for _old_policy_id in self._old_new_policies_map:
