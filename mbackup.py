@@ -7,7 +7,7 @@ import logging
 import mitigator
 
 
-PROG_VERSION = '3.2006.0'
+PROG_VERSION = '3.2008.1'
 
 
 def parse_options(args):

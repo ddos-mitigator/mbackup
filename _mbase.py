@@ -82,6 +82,24 @@ def _get_crb_setting(req_func, settings, policy):
         settings['data'] = copy.deepcopy(_data)
 
 
+def _get_retr_setting(req_func, settings, policy):
+    _data = req_func(path=settings['path'], policy=policy)
+    if not _data.get('use_default') and _data.get('rules'):
+        settings['data'] = copy.deepcopy(_data)
+    elif _data.get('use_default') and (
+        _data.get('default_rate', dict()).get('packets') or _data.get('default_rate', dict()).get('bits')
+    ):
+        settings['data'] = copy.deepcopy(_data)
+
+
+def _get_frb_setting(req_func, settings, policy):
+    _data = req_func(path=settings['path'], policy=policy)
+    if not _data.get('use_default') and _data.get('rules'):
+        settings['data'] = copy.deepcopy(_data)
+    elif _data.get('use_default') and (_data.get('limit_packets') or _data.get('limit_bits')):
+        settings['data'] = copy.deepcopy(_data)
+
+
 ###
 
 
@@ -156,7 +174,7 @@ countermeasures = {
     'facl': {'switch': {'path': '/facl/switch'}, 'settings': dict(), 'general': True, 'inpolicy': False},
     'frb': {
         'switch': {'path': '/frb/switch'},
-        'settings': {'frb_settings': {'path': '/frb/settings'},},
+        'settings': {'frb_settings': {'path': '/frb/settings', 'backup_func': _get_frb_setting},},
         'general': False,
         'inpolicy': True,
     },
@@ -204,6 +222,18 @@ countermeasures = {
         'switch': {'path': '/mcr/switch'},
         'settings': {'mcr_settings': {'path': '/mcr/settings', 'backup_func': _get_mcr_setting}},
         'general': False,
+        'inpolicy': True,
+    },
+    'mine': {
+        'switch': {'path': '/mine/switch'},
+        'settings': {'mine_settings': {'path': '/mine/settings'}, 'mine_servers': {'path': '/mine/servers'}},
+        'general': False,
+        'inpolicy': True,
+    },
+    'retr': {
+        'switch': {'path': '/retr/switch'},
+        'settings': {'retr_settings': {'path': '/retr/settings', 'backup_func': _get_retr_setting}},
+        'general': True,
         'inpolicy': True,
     },
     'rex': {

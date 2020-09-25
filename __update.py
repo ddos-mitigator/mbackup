@@ -321,6 +321,19 @@ class Update:
                 val_data['tcp_drop_zero_seqnum'] = False
                 val_data['tcpudp_drop_zero_port'] = False
 
+            frb_data = (
+                _policy.get('frb', dict())
+                .get('settings', dict())
+                .get('frb_settings', dict())
+                .get('data', dict())
+            )
+            if not frb_data.get('use_default') and frb_data.get('rules'):
+                pass
+            elif frb_data.get('use_default') and (frb_data.get('limit_packets') or frb_data.get('limit_bits')):
+                pass
+            else:
+                _policy['frb'] = dict()
+
         _mbase._recursive_cleanup(self.autodetect_params)
 
 
