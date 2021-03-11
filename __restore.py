@@ -29,7 +29,7 @@ class Restore:
             logging.info('resetting autodetect parameters')
             self._resetup_autodetect_parameters()
         if self.protection_params:
-            logging.info('recteating protection parameters start')
+            logging.info('recreating protection parameters start')
             self._recreate_protection_params()
         if self.autodetect_params:
             logging.info('resetting autodetect switches')
@@ -277,6 +277,7 @@ class Restore:
 
                 __old_record_id = _record['id']
                 del _record['id']
+                del _record['established']
                 __neighbors_map[__old_record_id] = self.req(path='/bgp/neighbors', data=_record)['id']
 
         if _bgp_prefix_lists:

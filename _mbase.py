@@ -87,6 +87,7 @@ def _get_autocapture_setting(req_func, settings, policy):
     autocapture_settings = req_func(path=settings['path'], policy=policy)
 
     if is_autocapture_enabled and autocapture_settings.get('address'):
+        del autocapture_settings['instances']
         settings['data'] = copy.deepcopy(autocapture_settings)
 
 
@@ -108,6 +109,13 @@ def _get_frb_setting(req_func, settings, policy):
         settings['data'] = copy.deepcopy(_data)
 
 
+def _get_spli_setting(req_func, settings, policy):
+    _data = req_func(path=settings['path'], policy=policy)
+    if 'learning_indicator' in _data:
+        del _data['learning_indicator']
+
+    settings['data'] = copy.deepcopy(_data)
+
 ###
 
 
@@ -118,13 +126,19 @@ def _set_simple(req_func, settings, method=None, policy=None):
 countermeasures = {
     'acl': {
         'switch': {'path': '/acl/switch'},
-        'settings': {'acl_entries': {'path': '/acl/entries'}},
+        'settings': {
+            'acl_settings': {'path': '/acl/settings'},
+            'acl_entries': {'path': '/acl/entries'}
+        },
         'general': True,
         'inpolicy': True,
     },
     'acl6': {
         'switch': {'path': '/acl6/switch'},
-        'settings': {'acl6_entries': {'path': '/acl6/entries'}},
+        'settings': {
+            'acl6_entries': {'path': '/acl6/entries'},
+            'acl6_settings': {'path': '/acl6/settings'}
+        },
         'general': True,
         'inpolicy': False,
     },
@@ -346,6 +360,15 @@ countermeasures = {
         'switch': {'path': '/geo6/switch'},
         'settings': {
             'geo6_rules': {'path': '/geo6/rules'}
+        },
+        'general': True,
+        'inpolicy': False,
+    },
+    'scan': {
+        'switch': {'path': '/scan/switch'},
+        'settings': {
+            'scan_settings': {'path': '/scan/settings'},
+            'scan_whitelist': {'path': '/scan/whitelist'}
         },
         'general': True,
         'inpolicy': False,

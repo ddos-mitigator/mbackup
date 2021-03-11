@@ -7,7 +7,7 @@ import logging
 import mitigator
 
 
-PROG_VERSION = '3.2008.2'
+PROG_VERSION = '3.2012'
 
 
 def parse_options(args):
@@ -16,8 +16,8 @@ def parse_options(args):
     parser.add_argument(
         'task',
         metavar='TASK',
-        choices=['backup', 'restore', 'update-file'],
-        help='may be one of following: backup, restore, update-file',
+        choices=['backup', 'restore'],
+        help='may be one of following: backup, restore',
     )
     parser.add_argument('-v', '--version', action='version', version=PROG_VERSION)
     parser.add_argument('-s', '--server', metavar='URL', help='target server URL')
@@ -123,25 +123,6 @@ def main(options):
         except mitigator.MOthException as e:
             logging.error(e)
             logging.error('retry restore not support, reset your mitigator database')
-
-    elif options.task == 'update-file':
-        import __update
-
-        if not (_input and _output):
-            sys.exit('for update-file --input and --output is required')
-
-        _upd = __update.Update()
-
-        _file_data = _input.read()
-        if not _file_data:
-            sys.exit('source file is empty')
-
-        _upd.load_params_from_json(_file_data)
-
-        _upd.update_params()
-
-        logging.info(f'writing updated data in {_output.name}')
-        _output.write(_upd.get_params_as_json(_pretty))
 
 
 if __name__ == "__main__":
