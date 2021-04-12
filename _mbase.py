@@ -144,7 +144,10 @@ countermeasures = {
     },
     'atls': {
         'switch': {'path': '/atls/switch'},
-        'settings': {'atls_settings': {'path': '/atls/settings'}},
+        'settings': {
+            'learning_switch': {'path': '/atls/learning_switch'},
+            'atls_settings': {'path': '/atls/settings'}
+        },
         'general': False,
         'inpolicy': True,
     },
@@ -196,7 +199,7 @@ countermeasures = {
     'facl': {'switch': {'path': '/facl/switch'}, 'settings': dict(), 'general': True, 'inpolicy': False},
     'frb': {
         'switch': {'path': '/frb/switch'},
-        'settings': {'frb_settings': {'path': '/frb/settings', 'backup_func': _get_frb_setting},},
+        'settings': {'frb_settings': {'path': '/frb/settings', 'backup_func': _get_frb_setting}},
         'general': False,
         'inpolicy': True,
     },
@@ -211,7 +214,7 @@ countermeasures = {
     },
     'http': {
         'switch': {'path': '/http/switch'},
-        'settings': {'http_settings': {'path': '/http/settings', 'backup_func': _get_http_setting,}},
+        'settings': {'http_settings': {'path': '/http/settings', 'backup_func': _get_http_setting}},
         'general': False,
         'inpolicy': True,
     },
@@ -294,6 +297,12 @@ countermeasures = {
         'general': False,
         'inpolicy': True,
     },
+    'serb': {
+        'switch': {'path': '/serb/switch'},
+        'settings': {'serb_settings': {'path': '/serb/settings', 'backup_func': _get_limiter_setting}},
+        'general': False,
+        'inpolicy': True,
+    },
     'spli': {
         'switch': {'path': '/spli/switch'},
         'settings': {'spli_settings': {'path': '/spli/settings'}},
@@ -303,7 +312,12 @@ countermeasures = {
     'tbl': {'settings': {'tbl_settings': {'path': '/tbl/settings'}}, 'general': True, 'inpolicy': True,},
     'tcp': {
         'switch': {'path': '/tcp/switch'},
-        'settings': {'tcp_settings': {'path': '/tcp/settings', 'backup_func': _get_tcp_setting,}},
+        'settings': {
+            'learning_switch': {'path': '/tcp/learning_switch'},
+            'tcp_settings': {'path': '/tcp/settings', 'backup_func': _get_tcp_setting},
+            'isn_params': {'path': '/tcp/isn/params'},
+            'isn_servers': {'path': '/tcp/isn/servers'},
+        },
         'general': False,
         'inpolicy': True,
     },
@@ -337,6 +351,12 @@ countermeasures = {
         'settings': {'bpf_settings': {'path': '/bpf/settings'}},
         'general': True,
         'inpolicy': True,
+    },
+    'bpf6': {
+        'switch': {'path': '/bpf6/switch'},
+        'settings': {'bpf_settings': {'path': '/bpf6/settings'}},
+        'general': True,
+        'inpolicy': False,
     },
     'geo': {
         'switch': {'path': '/geo/switch'},

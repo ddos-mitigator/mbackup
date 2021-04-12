@@ -88,6 +88,14 @@ class Restore:
                     settings={'path': '/bgp/announce', 'data': {'switch': _old_policy_data.get('announce_switch')}},
                     policy=self._old_new_policies_map[_old_policy_id],
                 )
+
+                _mbase._set_simple(
+                    req_func=self.req,
+                    settings={
+                        'path': f'/policies/monitor_mode/{self._old_new_policies_map[_old_policy_id]}',
+                        'data': {'monitor_mode': _old_policy_data.get('monitor_mode')}
+                    },
+                )
                 continue
 
             self._old_new_policies_map[_old_policy_id] = self.req(
@@ -243,6 +251,7 @@ class Restore:
     def _resetup_bgp(self):
         _bgp_community_lists = self.bgp.get('community_lists', list())
         _bgp_flowspec_lists = self.bgp.get('flowspec_lists', list())
+        _bgp_flowspec_templates = self.bgp.get('flowspec_templates', list())
         _bgp_global = self.bgp.get('global')
         _bgp_neighbors = self.bgp.get('neighbors', list())
         _bgp_neighbors_policies = self.bgp.get('neighbors_policies', dict())
@@ -260,6 +269,10 @@ class Restore:
                 __community_lists_map[__old_record_id] = self.req(path='/bgp/community_lists', data=_record)[
                     'id'
                 ]
+
+        if _bgp_flowspec_templates:
+            for name, template in _bgp_flowspec_templates.items():
+                self.req(path=f'/bgp/flowspec_templates/{name}', data={'template': template}, method='PUT')
 
         if _bgp_flowspec_lists:
             for _record in _bgp_flowspec_lists:
@@ -323,4 +336,5 @@ class Restore:
             )
 
         if _bgp_global:
-            self.req(path='/bgp/global', method='PUT', data=_bgp_global)
+            for connection in _bgp_global:
+                self.req(path='/bgp/global', method='POST', data=connection)

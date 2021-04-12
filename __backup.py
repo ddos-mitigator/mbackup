@@ -62,6 +62,9 @@ class Backup:
             self.policies[policy_id].update(
                 {'announce_switch': self.req(path='/bgp/announce', policy=policy_id).get("switch")}
             )
+            self.policies[policy_id].update(
+                {'monitor_mode': self.req(path=f'/policies/monitor_mode/{policy_id}').get("monitor_mode")}
+            )
 
     def _get_protection_params(self):
         for _target in ['general', *self.policies]:
@@ -184,12 +187,26 @@ class Backup:
     def _get_bgp_params(self):
         self.bgp = dict()
         self.bgp.update(self.req(path='/bgp/community_lists'))
-        self.bgp.update(self.req(path='/bgp/flowspec_lists'))
         self.bgp.update(self.req(path='/bgp/neighbors'))
         self.bgp.update(self.req(path='/bgp/prefix_lists'))
 
-        bgp_global = self.req(path='/bgp/global')
-        self.bgp.update({'global': bgp_global if bgp_global.get('active') else {}})
+        self.bgp.update({'global': self.req(path='/bgp/global')})
+
+        flowspec_templates = ('system.policy.prefixes', 'system.policy.rules')
+
+        for connection in self.bgp.get('global'):
+            del connection['id']
+
+        self.bgp['flowspec_lists'] = list()
+        for flowspec_list in self.req(path='/bgp/flowspec_lists').get('flowspec_lists', list()):
+            if flowspec_list.get('name') not in flowspec_templates:
+                self.bgp['flowspec_lists'].append(flowspec_list)
+
+        self.bgp['flowspec_templates'] = dict()
+        for template in flowspec_templates:
+            template_body = self.req(path=f'/bgp/flowspec_templates/{template}').get('template', str())
+            if template_body:
+                self.bgp['flowspec_templates'][template] = template_body
 
         self.bgp['neighbors_policies'] = dict()
         for neighbor in self.bgp.get('neighbors', list()):
